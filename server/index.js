@@ -1,29 +1,40 @@
-const express = require("express");
-const app = express();
-const http = require("http");
-const server = http.createServer(app);
-const { Server } = require("socket.io");
-const io = new Server(server);
+const express = require("express")
+const app = express()
+const cors = require("cors")
+const http = require("http").Server(app);
+const PORT = 4000
+const socketIO = require("socket.io")(http, {
+    cors: {
+        origin: "http://localhost:3000"
+    }
+});
 
+app.use(cors());
+let users = [];
 
-
-app.get("/", (req, res) => {
-    res.json(io.connectTimeout("http://localhost:3000"));
-})
-
-io.on("connection", (socket) => {
+socketIO.on("connection", (socket) => {
     console.log("user has connected");
-    socket.on("chat message", (msg) => {
-        console.log(msg)
-      socket.emit(msg)  
-      console.log(msg)
+    socket.on("message", msg => {
+      socket.emit("chatResponse", msg)
     })
 
-    server.on("disconnection", () => {
-        console.log("user disconnected");
+    socket.on("newUser", data => {
+        users.push(data)
+        socketIO.emit("newUserResponse", users)
     })
+
+    socket.on("disconnect", () => {
+        console.log("user disconnected");
+        users = users.filter((user) => socket.id !== user.socketID)
+        socketIO.emit("newUserResponse", users)
+        socket.disconnect()
+    });
+});
+
+app.get("/api", (req, res) => {
+    res.json({Hello: "server"})
 })
 
-app.listen(3000, () => {
-    console.log("listening on port 3000")
+http.listen(PORT, () => {
+    console.log(`listening on port ${PORT}`)
 })
