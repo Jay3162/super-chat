@@ -1,6 +1,7 @@
-const express = require("express")
-const app = express()
-const cors = require("cors")
+const express = require("express");
+const app = express();
+const cors = require("cors");
+const { Server } = require("http");
 const http = require("http").Server(app);
 const PORT = 4000
 const socketIO = require("socket.io")(http, {
@@ -13,12 +14,17 @@ app.use(cors());
 let users = [];
 let regUsers = [];
 
+
+
 socketIO.on("connection", (socket) => {
-    console.log(`user has connected - ${socket.id}`);
     socket.on("message", msg => {
       socketIO.emit("chatResponse", msg)
+      console.log(socket.id)
     })
-    console.log(socket.id)
+
+    socket.on("authmessage", txt => {
+        socketIO.emit("authResponse", txt)
+    })
 
     socket.on("newUser", data => {
         users.push(data)
@@ -27,6 +33,7 @@ socketIO.on("connection", (socket) => {
 
     socket.on("newRegUser", data => {
         regUsers.push(data)
+        console.log(data)
         socketIO.emit("newRegUserResponse", regUsers)
     })
 
